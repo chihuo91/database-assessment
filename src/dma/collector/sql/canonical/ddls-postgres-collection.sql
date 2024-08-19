@@ -858,3 +858,19 @@ create or replace table collection_postgres_db_machine_specs(
     primary_mac VARCHAR,
     ip_addresses VARCHAR
   );
+
+  create or replace table collection_postgres_replication_roles(
+    pkey VARCHAR,
+    dma_source_id VARCHAR,
+    dma_manual_id VARCHAR,
+    rolreplication VARCHAR,
+    database_name VARCHAR
+  );
+
+  create or replace table collection_postgres_rds_replication_roles(
+    pkey VARCHAR,
+    dma_source_id VARCHAR,
+    dma_manual_id VARCHAR,
+    has_rds_pg_role BOOLEAN,
+    database_name VARCHAR
+  );

@@ -102,9 +102,49 @@ class PostgresReadinessCheckExecutor(ReadinessCheckExecutor):
         self._check_max_worker_processes()
         self._check_extensions()
         self._check_fdw()
+        self._check_replication_role()
         is_pglogical_installed = self._check_pglogical_installed()
         self._check_privileges(is_pglogical_installed)
 
+    def _check_replication_role(self) -> None:
+        rule_code = "REPLICATION_ROLE"
+        result = self.local_db.sql(
+            "select distinct database_collation from collection_postgres_database_details"
+        ).fetchmany()
+        for c in self.rule_config:
+            if len(errors) > 0:
+                self.save_rule_result(c.db_variant, rule_code, "ERROR", all_errors)
+            else:
+                self.save_rule_result(
+                    c.db_variant,
+                    rule_code,
+                    "PASS",
+                    "User has all privileges required for migration",
+                )
+
+    def _check_rds_replication_role(self) -> None:
+        rule_code = "RDS_REPLICATION_ROLE"
+        is_rds = self._is_rds()
+        result = self.local_db.sql(
+            "select has_rds_pg_role from collection-postgres-rds-replication-roles"
+        ).fetchone()
+
+        if is_rds:
+            for c in self.rule_config:
+                if len(result) == 0 or not result[0]["pg_has_role"]:
+                    self.save_rule_result(
+                        c.db_variant,
+                        rule_code,
+                        "ERROR",
+                        "Replication user does not have rds_replication role",
+                    )
+                else:
+                    self.save_rule_result(
+                        c.db_variant,
+                        rule_code,
+                        "PASS",
+                        "Replication user has rds_replication role",
+                    )
     def _check_collation(self) -> None:
         rule_code = "COLLATION"
         result = self.local_db.sql(
